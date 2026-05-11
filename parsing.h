@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include "lexer.h"
+#include <vector>
 struct Expr {
     virtual ~Expr() = default;
     //print
@@ -39,6 +40,81 @@ struct BinaryExpr : Expr {
         right->print(indent + 1);
     }
 };
+struct VariableExpr : Expr {
+    std::string name;
+    VariableExpr(const std::string& n)
+        : name(n) {}
+    //print
+    void print(int indent = 0) const override {
+        for(int i = 0; i < indent; i++)std::cout << "  ";
+        std::cout << name << std::endl;
+    }
+};
+struct AssignExpr : Expr {
+    std::string name;
+    std::unique_ptr<Expr> value;
+    AssignExpr(
+        const std::string& n,
+        std::unique_ptr<Expr> val
+    )
+        : name(n),
+          value(std::move(val)) {}
+    //print
+    void print(int indent = 0) const override {
+    for (int i = 0; i < indent; i++)std::cout << "  ";
+    std::cout << "=" << std::endl;
+    for (int i = 0; i < indent + 1; i++)std::cout << "  ";
+    std::cout << name << std::endl;
+    value->print(indent + 1);
+}
+};
+struct BlockExpr :Expr{
+    std::vector<std::unique_ptr<Expr>>statements;
+    //print
+    void print(int indent = 0) const override {
+        for (int i = 0; i < indent; i++)std::cout << "  ";
+        std::cout << "BLOCK" << std::endl;
+        for (const auto& stmt : statements) {stmt->print(indent + 1);}
+    }
+};
+struct IfExpr :Expr{
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Expr> thenBranch;
+    IfExpr(
+        std::unique_ptr<Expr> cond,
+        std::unique_ptr<Expr> thenBr
+    )
+    :condition(std::move(cond)),thenBranch(std::move(thenBr)) {}
+    //print
+    void print(int indent = 0) const override {
+    for (int i = 0; i < indent; i++)std::cout << "  ";
+    std::cout << "IF" << std::endl;
+    condition->print(indent + 1);
+    thenBranch->print(indent + 1);
+}
+};
+struct WhileExpr :Expr{
+    std::unique_ptr<Expr> condition;
+    std::unique_ptr<Expr> body;
+    WhileExpr(
+        std::unique_ptr<Expr> cond,
+        std::unique_ptr<Expr> bod
+    )
+        : condition(std::move(cond)),
+          body(std::move(bod))
+    {}
+    //print
+    void print(int indent=0) const override {
+    for (int i=0;i<indent;i++)std::cout << "  ";
+    std::cout<<"WHILE"<< std::endl;
+    condition->print(indent+1);
+    body->print(indent+1);
+}
+};
+// struct ComparisonExpr: Expr{
+//     std::unique_ptr<Expr> compare;
+
+// };
 class Parser {
 
 private:
@@ -58,8 +134,13 @@ private:
     void eat(TokenType type);
 
     std::unique_ptr<Expr> expression();
+    std::unique_ptr<Expr> assignment();
     std::unique_ptr<Expr> term();
     std::unique_ptr<Expr> factor();
+    std::unique_ptr<Expr> statement();
+    std::unique_ptr<Expr> block();
+    std::unique_ptr<Expr> IfStatement();
+    std::unique_ptr<Expr> WhileStatement();
 };
 void Parser::eat(TokenType type) {
 
@@ -82,6 +163,11 @@ std::unique_ptr<Expr> Parser::factor() {
         auto node = expression();
         eat(TokenType::RightParen);
         return node;
+    }
+    if (currentToken.type == TokenType::Identifier) {
+        std::string name(currentToken.value);
+        eat(TokenType::Identifier);
+        return std::make_unique<VariableExpr>(name);
     }
     throw std::runtime_error("Invalid factor");
 }
@@ -116,14 +202,96 @@ std::unique_ptr<Expr> Parser::expression() {
             eat(TokenType::Plus);
         else
             eat(TokenType::Minus);
+        auto right=term();
         node = std::make_unique<BinaryExpr>(
             op,
             std::move(node),
-            term()
+            std::move(right)
         );
     }
     return node;
 }
+std::unique_ptr<Expr> Parser::assignment() {
+    auto left = expression();
+    if (currentToken.type == TokenType::Equals) {
+        auto var =dynamic_cast<VariableExpr*>(left.get());
+        if (!var) {
+            throw std::runtime_error(
+                "Invalid assignment target"
+            );
+        }
+        eat(TokenType::Equals);
+        auto value = assignment();
+        return std::make_unique<AssignExpr>(
+            var->name,
+            std::move(value)
+        );
+    }
+    return left;
+}
+std::unique_ptr<Expr> Parser::statement() {
+    if(currentToken.type==TokenType::If){
+        return IfStatement();
+    }
+    if(currentToken.type==TokenType::While){
+        return WhileStatement();
+    }
+    if(currentToken.type==TokenType::LeftBrace){
+        return block();
+    }
+    return assignment();
+}
+std::unique_ptr<Expr> Parser::block(){
+    eat(TokenType::LeftBrace);
+    auto block=std::make_unique<BlockExpr>();
+    while(currentToken.type !=TokenType::RightBrace){
+        auto stmt=statement();
+        block->statements.push_back(std::move(stmt));
+        if(currentToken.type==TokenType::Semicolon){
+            eat(TokenType::Semicolon);
+        }
+    }
+    eat(TokenType::RightBrace);
+    return block;
+}
+std::unique_ptr<Expr> Parser::IfStatement(){
+    eat(TokenType::If);
+    eat(TokenType::LeftParen);
+    auto condition=assignment();
+    eat(TokenType::RightParen);
+    auto thenBranch=statement();
+    return std::make_unique<IfExpr>(
+        std::move(condition),std::move(thenBranch)
+    );
+}
+std::unique_ptr<Expr> Parser::WhileStatement(){
+    eat(TokenType::While);
+    eat(TokenType::LeftParen);
+    auto condition=assignment();
+    eat(TokenType::RightParen);
+    auto body=statement();
+    return std::make_unique<WhileExpr>(
+        std::move(condition),std::move(body)
+    );
+}
 std::unique_ptr<Expr> Parser::parse() {
-    return expression();
+    auto block = std::make_unique<BlockExpr>();
+    while (currentToken.type != TokenType::EndOfFile) {
+        auto stmt = statement();
+        block->statements.push_back(
+            std::move(stmt)
+        );
+        if (currentToken.type == TokenType::Semicolon) {
+            eat(TokenType::Semicolon);
+        }
+        // else if(currentToken.type==TokenType::RightBrace){
+        //     continue;
+        // }
+        // else {
+        //     throw std::runtime_error(
+        //         "Expected semicolon"
+        //     );
+        // }
+    }
+    return block;
 }

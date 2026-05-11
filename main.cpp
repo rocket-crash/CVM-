@@ -3,7 +3,7 @@
 #include "parsing.h"
 #include <string>
 int main(){
-    std::string code="10+20*3;";
+    std::string code="x=x+10;";
     Lexer lexer(code);
     // Token token;
     // do {

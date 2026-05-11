@@ -2,7 +2,7 @@
 #include <string_view>
 #include <iostream>
 #include <cctype>
-enum class TokenType {Identifier,Number,Plus,Minus,Multiply,Divide,Equals,Semicolon,LeftParen,RightParen,EndOfFile,Unknown};
+enum class TokenType {Identifier,Number,Plus,Minus,Multiply,Divide,Equals,Semicolon,LeftParen,RightParen,EndOfFile,LeftBrace,RightBrace,If,While,Unknown};
 struct Token {
     TokenType type;
     std::string_view value;
@@ -50,9 +50,12 @@ Token Lexer::identifier() {
     while (isalnum(currentChar()) || currentChar() == '_') {
         position++;
     }
+    auto text=source.substr(start,position-start);
+    if(text=="if"){return {TokenType::If,text};}
+    if(text=="while"){return {TokenType::While,text};}
     return {
         TokenType::Identifier,
-        source.substr(start, position - start)
+        text
     };
 }
 Token Lexer::getNextToken() {
@@ -93,6 +96,12 @@ Token Lexer::getNextToken() {
             case ')':
                 position++;
                 return {TokenType::RightParen, ")"};
+            case '{':
+                position++;
+                return {TokenType::LeftBrace,"{"};
+            case '}':
+                position++;
+                return {TokenType::RightBrace,"}"};
             default:
                 position++;
                 return {TokenType::Unknown, source.substr(position-1,1)};
