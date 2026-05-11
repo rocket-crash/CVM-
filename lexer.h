@@ -2,7 +2,9 @@
 #include <string_view>
 #include <iostream>
 #include <cctype>
-enum class TokenType {Identifier,Number,Plus,Minus,Multiply,Divide,Equals,Semicolon,LeftParen,RightParen,EndOfFile,LeftBrace,RightBrace,If,While,Unknown};
+enum class TokenType {Identifier,Number,Plus,Minus,Multiply,Divide,Equals,
+    Semicolon,LeftParen,RightParen,EndOfFile,LeftBrace,RightBrace,
+    If,While,Greater,Less,GreaterEqual,LessEqual,EqualEqual,NotEqual,Unknown};
 struct Token {
     TokenType type;
     std::string_view value;
@@ -11,19 +13,21 @@ class Lexer {
     private:
         std::string_view source;
         size_t position;
-
     public:
         Lexer(const std::string_view& input)
             : source(input), position(0) {}
-
         Token getNextToken();
-
     private:
         char currentChar();
+        char peek();
         void skipWhitespace();
         Token number();
         Token identifier();
 };
+char Lexer::peek(){
+    if(position+1>=source.length())return '\0';
+    return source[position+1];
+}
 char Lexer::currentChar() {
     if (position >= source.length())
         return '\0';
@@ -84,9 +88,9 @@ Token Lexer::getNextToken() {
             case '/':
                 position++;
                 return {TokenType::Divide, "/"};
-            case '=':
-                position++;
-                return {TokenType::Equals, "="};
+            // case '=':
+            //     position++;
+            //     return {TokenType::Equals, "="};
             case ';':
                 position++;
                 return {TokenType::Semicolon, ";"};
@@ -102,6 +106,59 @@ Token Lexer::getNextToken() {
             case '}':
                 position++;
                 return {TokenType::RightBrace,"}"};
+            case '>':
+                if(peek()=='='){
+                    size_t start=position;
+                    position++;
+                    position++;
+                    return {
+                        TokenType::GreaterEqual,
+                        source.substr(start,2)
+                    };
+                }
+                position++;
+                return {
+                    TokenType::Greater,">"
+                };
+            case '<':
+                if(peek()=='='){
+                    size_t start=position;
+                    position++;
+                    position++;
+                    return {
+                        TokenType::LessEqual,
+                        source.substr(start,2)
+                    };
+                }
+                position++;
+                return {
+                    TokenType ::Less,"<"
+                };
+            case '=':
+                if (peek() == '=') {
+                size_t start = position;
+                position++;
+                position++;
+                return {
+                    TokenType::EqualEqual,
+                    source.substr(start, 2)
+                };
+                }
+                position++;
+                return {
+                    TokenType::Equals,"="
+                 };
+            case '!':
+                if (peek() == '=') {
+                size_t start = position;
+                position++;
+                position++;
+                return {
+                    TokenType::NotEqual,
+                    source.substr(start, 2)
+                };
+                }
+                throw std::runtime_error("Unexpected character: !");
             default:
                 position++;
                 return {TokenType::Unknown, source.substr(position-1,1)};
