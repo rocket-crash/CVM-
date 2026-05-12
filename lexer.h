@@ -4,7 +4,7 @@
 #include <cctype>
 enum class TokenType {Identifier,Number,Plus,Minus,Multiply,Divide,Equals,
     Semicolon,LeftParen,RightParen,EndOfFile,LeftBrace,RightBrace,
-    If,Else,While,Greater,Less,GreaterEqual,LessEqual,EqualEqual,NotEqual,True,False,Unknown};
+    If,Else,While,Greater,Less,GreaterEqual,LessEqual,EqualEqual,NotEqual,True,False,Print,Input,Unknown};
 struct Token {
     TokenType type;
     std::string_view value;
@@ -55,6 +55,8 @@ Token Lexer::identifier() {
         position++;
     }
     auto text=source.substr(start,position-start);
+    if(text=="print"){return {TokenType::Print,text};}
+    if(text=="input"){return {TokenType::Input,text};}
     if(text=="if"){return {TokenType::If,text};}
     if(text=="else"){return {TokenType::Else,text};}
     if(text=="while"){return {TokenType::While,text};}

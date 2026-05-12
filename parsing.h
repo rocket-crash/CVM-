@@ -150,6 +150,24 @@ struct BooleanExpr:Expr {
         std::cout<<(value ? "true":"false")<<std::endl;
     }
 };
+struct PrintExpr : Expr {
+    std::unique_ptr<Expr> value;
+    PrintExpr(std::unique_ptr<Expr> val)
+        : value(std::move(val))
+    {}
+    //print
+    void print(int indent = 0) const override {
+        for (int i = 0; i < indent; i++)std::cout << "  ";
+        std::cout << "PRINT" << std::endl;
+        value->print(indent + 1);
+    }
+};
+struct InputExpr : Expr {
+    void print(int indent = 0) const override {
+        for (int i = 0; i < indent; i++)std::cout << "  ";
+        std::cout << "INPUT" << std::endl;
+    }
+};
 class Parser {
 private:
     Lexer& lexer;
@@ -172,6 +190,7 @@ private:
     std::unique_ptr<Expr> block();
     std::unique_ptr<Expr> IfStatement();
     std::unique_ptr<Expr> WhileStatement();
+    std::unique_ptr<Expr> printStatement();
 };
 void Parser::eat(TokenType type) {
 
@@ -202,6 +221,12 @@ std::unique_ptr<Expr> Parser::factor() {
     if(currentToken.type==TokenType::False){
         eat (TokenType::False);
         return std::make_unique<BooleanExpr> (false);
+    }
+    if (currentToken.type == TokenType::Input) {
+        eat(TokenType::Input);
+        eat(TokenType::LeftParen);
+        eat(TokenType::RightParen); 
+        return std::make_unique<InputExpr>();
     }
     if (currentToken.type == TokenType::Identifier) {
         std::string name(currentToken.value);
@@ -291,6 +316,9 @@ std::unique_ptr<Expr> Parser::assignment() {
     return left;
 }
 std::unique_ptr<Expr> Parser::statement() {
+    if (currentToken.type == TokenType::Print) {
+        return printStatement();
+    }   
     if(currentToken.type==TokenType::If){
         return IfStatement();
     }
@@ -362,4 +390,13 @@ std::unique_ptr<Expr> Parser::parse() {
         // }
     }
     return block;
+}
+std::unique_ptr<Expr> Parser::printStatement() {
+    eat(TokenType::Print);
+    eat(TokenType::LeftParen);
+    auto value = assignment();
+    eat(TokenType::RightParen);
+    return std::make_unique<PrintExpr>(
+        std::move(value)
+    );
 }
