@@ -3,7 +3,22 @@
 #include "parsing.h"
 #include <string>
 int main(){
-    std::string code="x=x+10;";
+    std::string code = R"(
+{
+    x = 10 + 20 * 3;
+    if (x >= 50) {
+        y = x - 5;
+    }
+    while (x==true) {
+
+        x = x - 1;
+
+        if (x == 5) {
+            y = y + 10;
+        }
+    }
+}
+)";
     Lexer lexer(code);
     // Token token;
     // do {

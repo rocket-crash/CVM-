@@ -111,30 +111,54 @@ struct WhileExpr :Expr{
     body->print(indent+1);
 }
 };
-// struct ComparisonExpr: Expr{
-//     std::unique_ptr<Expr> compare;
-
-// };
+struct CompareExpr : Expr {
+    std::string op;
+    std::unique_ptr<Expr> left;
+    std::unique_ptr<Expr> right;
+    CompareExpr(
+        std::string oper,
+        std::unique_ptr<Expr> lhs,
+        std::unique_ptr<Expr> rhs
+    )
+        : op(std::move(oper)),
+          left(std::move(lhs)),
+          right(std::move(rhs))
+    {}
+    //print
+    void print(int indent = 0) const override {
+        for (int i = 0; i < indent; i++)std::cout << "  ";
+        std::cout << op << std::endl;
+        left->print(indent + 1);
+        right->print(indent + 1);
+    }
+};
+struct BooleanExpr:Expr {
+    bool value;
+    BooleanExpr(bool val):value (val){}
+    //print
+    void print(int indent=0)const override{
+        for(int i=0;i<indent;i++){
+            std::cout<<"  ";
+        }
+        std::cout<<(value ? "true":"false")<<std::endl;
+    }
+};
 class Parser {
-
 private:
     Lexer& lexer;
     Token currentToken;
-
 public:
     Parser(Lexer& lex)
         : lexer(lex)
     {
         currentToken = lexer.getNextToken();
     }
-
     std::unique_ptr<Expr> parse();
-
 private:
     void eat(TokenType type);
-
     std::unique_ptr<Expr> expression();
     std::unique_ptr<Expr> assignment();
+    std::unique_ptr<Expr> comparison();
     std::unique_ptr<Expr> term();
     std::unique_ptr<Expr> factor();
     std::unique_ptr<Expr> statement();
@@ -163,6 +187,14 @@ std::unique_ptr<Expr> Parser::factor() {
         auto node = expression();
         eat(TokenType::RightParen);
         return node;
+    }
+    if(currentToken.type==TokenType::True){
+        eat (TokenType::True);
+        return std::make_unique<BooleanExpr> (true);
+    }
+    if(currentToken.type==TokenType::False){
+        eat (TokenType::False);
+        return std::make_unique<BooleanExpr> (false);
     }
     if (currentToken.type == TokenType::Identifier) {
         std::string name(currentToken.value);
@@ -211,8 +243,30 @@ std::unique_ptr<Expr> Parser::expression() {
     }
     return node;
 }
+std::unique_ptr<Expr> Parser::comparison(){
+    auto node=expression();
+    while (
+        currentToken.type == TokenType::Greater ||
+        currentToken.type == TokenType::Less ||
+        currentToken.type == TokenType::GreaterEqual ||
+        currentToken.type == TokenType::LessEqual ||
+        currentToken.type == TokenType::EqualEqual ||
+        currentToken.type == TokenType::NotEqual
+    ) {
+        std::string op(currentToken.value);
+        TokenType type = currentToken.type;
+        eat(type);
+        auto right = expression();
+        node = std::make_unique<CompareExpr>(
+            op,
+            std::move(node),
+            std::move(right)
+        );
+    }
+    return node;
+}
 std::unique_ptr<Expr> Parser::assignment() {
-    auto left = expression();
+    auto left = comparison();
     if (currentToken.type == TokenType::Equals) {
         auto var =dynamic_cast<VariableExpr*>(left.get());
         if (!var) {
@@ -254,6 +308,7 @@ std::unique_ptr<Expr> Parser::block(){
     eat(TokenType::RightBrace);
     return block;
 }
+
 std::unique_ptr<Expr> Parser::IfStatement(){
     eat(TokenType::If);
     eat(TokenType::LeftParen);
