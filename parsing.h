@@ -80,17 +80,24 @@ struct BlockExpr :Expr{
 struct IfExpr :Expr{
     std::unique_ptr<Expr> condition;
     std::unique_ptr<Expr> thenBranch;
+    std::unique_ptr<Expr> elseBranch;
     IfExpr(
         std::unique_ptr<Expr> cond,
-        std::unique_ptr<Expr> thenBr
+        std::unique_ptr<Expr> thenBr,
+        std::unique_ptr<Expr> elseBr
     )
-    :condition(std::move(cond)),thenBranch(std::move(thenBr)) {}
+    :condition(std::move(cond)),thenBranch(std::move(thenBr)),elseBranch(std::move(elseBr)) {}
     //print
     void print(int indent = 0) const override {
     for (int i = 0; i < indent; i++)std::cout << "  ";
     std::cout << "IF" << std::endl;
     condition->print(indent + 1);
     thenBranch->print(indent + 1);
+    if(elseBranch){
+        for(int i=0;i<indent;i++)std::cout<<"  ";
+        std::cout<<"Else"<<std::endl;
+        elseBranch->print(indent+1);
+    }
 }
 };
 struct WhileExpr :Expr{
@@ -310,13 +317,19 @@ std::unique_ptr<Expr> Parser::block(){
 }
 
 std::unique_ptr<Expr> Parser::IfStatement(){
+    
     eat(TokenType::If);
     eat(TokenType::LeftParen);
     auto condition=assignment();
     eat(TokenType::RightParen);
     auto thenBranch=statement();
+    std::unique_ptr<Expr> elseBranch;
+    if(currentToken.type==TokenType::Else){
+        eat(TokenType::Else);
+        elseBranch=statement();
+    }
     return std::make_unique<IfExpr>(
-        std::move(condition),std::move(thenBranch)
+        std::move(condition),std::move(thenBranch),std::move(elseBranch)
     );
 }
 std::unique_ptr<Expr> Parser::WhileStatement(){
