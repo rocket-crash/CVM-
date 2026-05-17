@@ -1,7 +1,10 @@
 # Custom C++ Bytecode Interpreter & Compiler
 
 A lightweight, stack-based custom programming language compiler and virtual machine (VM) written entirely in C++ from scratch. It features its own lexer, recursive-descent parser, bytecode compiler, and runtime interpreter.
-
+## Run
+Run main file as default in terminal.
+g++ main.cpp -o cvm
+./cvm
 ## Features
 The language supports a variety of core programming constructs:
 * **Data Types**: Integers and Booleans (`true`, `false`).
