@@ -90,9 +90,19 @@ Token Lexer::getNextToken() {
             case '*':
                 position++;
                 return {TokenType::Multiply, "*"};
+            // case '/':
+            //     position++;
+            //     return {TokenType::Divide, "/"};
             case '/':
+                if (peek() == '/') {
+                    // It's a comment! Skip until the end of the line
+                    while (currentChar() != '\n' && currentChar() != '\0') {
+                        position++;
+                    }
+                    continue; // Go back to the top of the while loop to get the next real token
+                }
                 position++;
-                return {TokenType::Divide, "/"};
+            return {TokenType::Divide, "/"};
             // case '=':
             //     position++;
             //     return {TokenType::Equals, "="};

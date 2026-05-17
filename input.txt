@@ -1,0 +1,32 @@
+a=input();
+b=input();
+result = (a + b) * 2 - (a / b); 
+print(result);
+
+is_true = true;
+is_false = false;
+if (a >= 10) {
+    if (b != 5) {
+        print(1);
+    } else {
+        print(0);
+    }
+} else {
+    print(0);
+}
+
+counter = 0;
+while (counter < 3) {
+    print(counter);
+    counter = counter + 1;
+}
+
+countdown = 5;
+while (countdown > 0) {
+    if (countdown == 3) {
+        print(9999);
+    } else {
+        print(countdown);
+    }
+    countdown = countdown - 1;
+}
