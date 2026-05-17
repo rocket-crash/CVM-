@@ -1,4 +1,4 @@
-a=input();
+a=input(); //enter value of a
 b=input();
 result = (a + b) * 2 - (a / b); 
 print(result);
@@ -24,7 +24,7 @@ while (counter < 3) {
 countdown = 5;
 while (countdown > 0) {
     if (countdown == 3) {
-        print(9999);
+        print(44);
     } else {
         print(countdown);
     }

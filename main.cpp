@@ -23,7 +23,7 @@ int main() {
   ast->print();
   Compiler compiler;
   compiler.compile(*ast);
-  compiler.disassemble();
+//   compiler.disassemble();
 
   std::cout << "VM output- " << std::endl;
   std::cout<<"Enter the value of a and b as input"<<std::endl;
