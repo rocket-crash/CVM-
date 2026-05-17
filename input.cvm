@@ -1,5 +1,5 @@
 a=input(); //enter value of a
-b=input();
+b=input(); //enter value of b
 result = (a + b) * 2 - (a / b); 
 print(result);
 

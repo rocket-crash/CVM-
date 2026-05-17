@@ -10,7 +10,7 @@
 
 int main() {
   try{
-  std::ifstream file("input.txt");
+  std::ifstream file("input.cvm");
   if(!file){std::cout<<"file not found"<<std::endl;return 0;}
   std::stringstream buffer;
   buffer<<file.rdbuf();
@@ -23,7 +23,7 @@ int main() {
   ast->print();
   Compiler compiler;
   compiler.compile(*ast);
-//   compiler.disassemble();
+  compiler.disassemble();
 
   std::cout << "VM output- " << std::endl;
   std::cout<<"Enter the value of a and b as input"<<std::endl;
